@@ -5,7 +5,6 @@
     flake-utils.url = "github:numtide/flake-utils";
   };
   outputs = {
-    self,
     nixpkgs,
     flake-utils,
     ...
@@ -14,12 +13,11 @@
       system: let
         pkgs = import nixpkgs {inherit system;};
         projectFile = "./Quine/Quine.fsproj";
-        testProjectFiles = [];
         pname = "Quine";
-        dotnet-sdk = pkgs.dotnet-sdk_7;
-        dotnet-runtime = pkgs.dotnetCorePackages.runtime_7_0;
+        dotnet-sdk = pkgs.dotnet-sdk_8;
+        dotnet-runtime = pkgs.dotnetCorePackages.runtime_8_0;
         version = "0.0.1";
-        dotnetTool = toolName: toolVersion: sha256:
+        dotnetTool = toolName: toolVersion: hash:
           pkgs.stdenvNoCC.mkDerivation rec {
             name = toolName;
             version = toolVersion;
@@ -27,7 +25,7 @@
             src = pkgs.fetchNuGet {
               pname = name;
               version = version;
-              sha256 = sha256;
+              hash = hash;
               installPhase = ''mkdir -p $out/bin && cp -r tools/net6.0/any/* $out/bin'';
             };
             installPhase = ''
@@ -40,34 +38,13 @@
           };
       in {
         packages = {
-          fantomas = dotnetTool "fantomas" "5.2.0-alpha-010" "sha256-CuoROZBBhaK0IFjbKNLvzgX4GXwuIybqIvCtuqROBMk=";
-          fetchDeps = let
-            flags = [];
-            runtimeIds = map (system: pkgs.dotnetCorePackages.systemToDotnetRid system) dotnet-sdk.meta.platforms;
-          in
-            pkgs.writeShellScript "fetch-${pname}-deps" (builtins.readFile (pkgs.substituteAll {
-              src = ./nix/fetchDeps.sh;
-              pname = pname;
-              binPath = pkgs.lib.makeBinPath [pkgs.coreutils dotnet-sdk (pkgs.nuget-to-nix.override {inherit dotnet-sdk;})];
-              projectFiles = toString (pkgs.lib.toList projectFile);
-              testProjectFiles =
-                if testProjectFiles == []
-                then ""
-                else toString testProjectFiles;
-              rids = pkgs.lib.concatStringsSep "\" \"" runtimeIds;
-              packages = dotnet-sdk.packages;
-              storeSrc = pkgs.srcOnly {
-                src = ./.;
-                pname = pname;
-                version = version;
-              };
-            }));
+          fantomas = dotnetTool "fantomas" (builtins.fromJSON (builtins.readFile ./.config/dotnet-tools.json)).tools.fantomas.version (builtins.head (builtins.filter (elem: elem.pname == "fantomas") ((import ./nix/deps.nix) {fetchNuGet = x: x;}))).hash;
           default = pkgs.buildDotnetModule {
             pname = pname;
             version = version;
             src = ./.;
             projectFile = projectFile;
-            nugetDeps = ./nix/deps.nix;
+            nugetDeps = ./nix/deps.nix; # `nix build .#default.passthru.fetch-deps && ./result` and put the result here
             doCheck = true;
             dotnet-sdk = dotnet-sdk;
             dotnet-runtime = dotnet-runtime;
@@ -75,7 +52,7 @@
         };
         devShells = {
           default = pkgs.mkShell {
-            buildInputs = [pkgs.dotnet-sdk_7 pkgs.git pkgs.alejandra pkgs.nodePackages.markdown-link-check];
+            buildInputs = [dotnet-sdk pkgs.git pkgs.alejandra pkgs.nodePackages.markdown-link-check];
           };
         };
       }
