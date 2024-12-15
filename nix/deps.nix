@@ -3,7 +3,7 @@
 {fetchNuGet}: [
   (fetchNuGet {
     pname = "fantomas";
-    version = "6.3.10";
-    hash = "sha256-2m4YevDp9CRm/Ci2hguDXd6DUMElRg3hNAne9LHntWM=";
+    version = "6.3.16";
+    hash = "sha256-4tRdYf+/Q1iedx+DDuIKVGlIWQdr6erM51VdKzZkhCs=";
   })
 ]

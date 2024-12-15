@@ -14,8 +14,8 @@
         pkgs = import nixpkgs {inherit system;};
         projectFile = "./Quine/Quine.fsproj";
         pname = "Quine";
-        dotnet-sdk = pkgs.dotnet-sdk_8;
-        dotnet-runtime = pkgs.dotnetCorePackages.runtime_8_0;
+        dotnet-sdk = pkgs.dotnetCorePackages.sdk_9_0;
+        dotnet-runtime = pkgs.dotnetCorePackages.runtime_9_0;
         version = "0.0.1";
         dotnetTool = toolName: toolVersion: hash:
           pkgs.stdenvNoCC.mkDerivation rec {
@@ -26,7 +26,7 @@
               pname = name;
               version = version;
               hash = hash;
-              installPhase = ''mkdir -p $out/bin && cp -r tools/net6.0/any/* $out/bin'';
+              installPhase = ''mkdir -p $out/bin && cp -r tools/*/any/* $out/bin'';
             };
             installPhase = ''
               runHook preInstall
